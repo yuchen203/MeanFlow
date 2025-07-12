@@ -6,6 +6,7 @@ from torchvision.utils import make_grid, save_image
 from tqdm import tqdm
 from meanflow import MeanFlow
 from accelerate import Accelerator
+from torch.utils.tensorboard import SummaryWriter
 import time
 import os
 
@@ -72,6 +73,7 @@ if __name__ == '__main__':
     log_step = 100
     sample_step = 100
 
+    summary_writer = SummaryWriter("runs/fm_mnist")
     with tqdm(range(n_steps), dynamic_ncols=True) as pbar:
         pbar.set_description("Training")
         model.train()
@@ -104,17 +106,19 @@ if __name__ == '__main__':
 
                     with open('log.txt', mode='a') as n:
                         n.write(log_message)
-
+                    summary_writer.add_scalar('Loss/train', losses / log_step, global_step)
+                    summary_writer.add_scalar('MSE_Loss/train', mse_losses / log_step, global_step)
                     losses = 0.0
                     mse_losses = 0.0
 
             if global_step % sample_step == 0:
                 if accelerator.is_main_process:
                     model_module = model.module if hasattr(model, 'module') else model
-                    z = meanflow.sample_each_class(model_module, 1)
+                    z = meanflow.sample_each_class(model_module, 10)
                     log_img = make_grid(z, nrow=10)
                     img_save_path = f"images/step_{global_step}.png"
                     save_image(log_img, img_save_path)
+                    summary_writer.add_image('image', log_img, global_step)
                 accelerator.wait_for_everyone()
                 model.train()
                 

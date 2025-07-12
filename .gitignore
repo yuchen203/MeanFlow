@@ -164,4 +164,6 @@ cython_debug/
 cifar/
 mnist/
 images/
+runs/
+checkpoints/
 log.txt
