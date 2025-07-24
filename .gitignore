@@ -167,3 +167,4 @@ images/
 runs/
 checkpoints/
 log.txt
+*.png
