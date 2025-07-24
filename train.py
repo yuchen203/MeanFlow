@@ -32,15 +32,12 @@ if __name__ == '__main__':
         transform=T.Compose([T.Resize((32, 32)), T.ToTensor(),]),
     )
 
-    def cycle(iterable):
-        while True:
-            for i in iterable:
-                yield i
+    
 
     train_dataloader = torch.utils.data.DataLoader(
-        dataset, batch_size=batch_size, shuffle=True, drop_last=True, num_workers=8
+        dataset, batch_size=batch_size, shuffle=True, drop_last=True, num_workers=4
     )
-    train_dataloader = cycle(train_dataloader)
+    
 
     model = MFDiT(
         input_size=32,
@@ -66,6 +63,12 @@ if __name__ == '__main__':
 
     model, optimizer, train_dataloader = accelerator.prepare(model, optimizer, train_dataloader)
 
+    def cycle(iterable):
+        while True:
+            for i in iterable:
+                yield i
+    train_dataloader = cycle(train_dataloader)
+    
     global_step = 0.0
     losses = 0.0
     mse_losses = 0.0
@@ -73,7 +76,7 @@ if __name__ == '__main__':
     log_step = 100
     sample_step = 100
 
-    summary_writer = SummaryWriter("runs/fm_mnist")
+    #summary_writer = SummaryWriter("runs/fm_mnist")
     with tqdm(range(n_steps), dynamic_ncols=True) as pbar:
         pbar.set_description("Training")
         model.train()
@@ -106,8 +109,8 @@ if __name__ == '__main__':
 
                     with open('log.txt', mode='a') as n:
                         n.write(log_message)
-                    summary_writer.add_scalar('Loss/train', losses / log_step, global_step)
-                    summary_writer.add_scalar('MSE_Loss/train', mse_losses / log_step, global_step)
+                    #summary_writer.add_scalar('Loss/train', losses / log_step, global_step)
+                    #summary_writer.add_scalar('MSE_Loss/train', mse_losses / log_step, global_step)
                     losses = 0.0
                     mse_losses = 0.0
 
@@ -118,7 +121,7 @@ if __name__ == '__main__':
                     log_img = make_grid(z, nrow=10)
                     img_save_path = f"images/step_{global_step}.png"
                     save_image(log_img, img_save_path)
-                    summary_writer.add_image('image', log_img, global_step)
+                    #summary_writer.add_image('image', log_img, global_step)
                 accelerator.wait_for_everyone()
                 model.train()
                 
